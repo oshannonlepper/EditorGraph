@@ -58,6 +58,16 @@ public class EditorGraph : ScriptableObject {
 		return null;
 	}
 
+	public EditorPin GetPinFromID(EditorPinIdentifier PinIdentifier)
+	{
+		EditorNode _Node = GetNodeFromID(PinIdentifier.NodeID);
+		if (_Node != null)
+		{
+			return _Node.GetPin(PinIdentifier.PinID);
+		}
+		return null;
+	}
+
 	public EditorNode CreateFromFunction(System.Type ClassType, string Methodname, bool bHasOutput = true, bool bHasInput = true)
 	{
 		return EditorNode.CreateFromFunction(ClassType, Methodname, bHasInput, bHasOutput);

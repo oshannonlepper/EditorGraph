@@ -13,6 +13,12 @@ public struct EditorNodeRenderData
 	public float PinSize;
 }
 
+public struct EditorPinIdentifier
+{
+	public int NodeID;
+	public int PinID;
+}
+
 [System.Serializable]
 public class EditorNode
 {
@@ -73,6 +79,15 @@ public class EditorNode
 		_ID = ++_nodeIDCounter;
 		Pins = new List<EditorPin>();
 		UpdateNodeRect();
+	}
+
+	public EditorPin GetPin(int Index)
+	{
+		if (Index < 0 || Index >= Pins.Count)
+		{
+			Debug.LogError("Attempted to get pin of invalid index " + Index + ", (max = " + Pins.Count + ")");
+		}
+		return Pins[Index];
 	}
 
 	public Rect GetNodeRect()
@@ -139,11 +154,18 @@ public class EditorNode
 		return Pins[ID].GetPinName();
 	}
 
+	public EditorPinIdentifier GetPinIdentifier(int ID)
+	{
+		EditorPinIdentifier Identifier = new EditorPinIdentifier();
+		Identifier.NodeID = _ID;
+		Identifier.PinID = ID;
+		return Identifier;
+	}
+
 	public void SetNodePosition(Vector2 InPos)
 	{
 		Position = InPos;
 		UpdateNodeRect();
-		Debug.Log(_renderData.NodeRect);
 	}
 
 	public void UpdateNodeRect()
