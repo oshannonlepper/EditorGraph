@@ -2,12 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct PinData
-{
-	public bool bIsInput;
-	public int Number;
-}
-
 public enum EPinLinkType
 {
 	None,
@@ -21,7 +15,6 @@ public class EditorPin
 
 	[SerializeField] private string Type;
 	[SerializeField] private string Name;
-	[SerializeField] private int ID;
 	[SerializeField] private int OwnerID;
 	[SerializeField] private EPinLinkType PinLinkType;
 
@@ -29,16 +22,14 @@ public class EditorPin
 	{
 		Type = "null";
 		Name = "";
-		ID = -1;
 		OwnerID = -1;
 		PinLinkType = EPinLinkType.None;
 	}
 
-	public EditorPin(string _Type, string _Name, int _ID, int _OwnerID, EPinLinkType _PinLinkType)
+	public EditorPin(string _Type, string _Name, int _OwnerID, EPinLinkType _PinLinkType)
 	{
 		Type = _Type;
 		Name = _Name;
-		ID = _ID;
 		OwnerID = _OwnerID;
 		PinLinkType = _PinLinkType;
 	}
@@ -51,11 +42,6 @@ public class EditorPin
 	public string GetPinName()
 	{
 		return Name;
-	}
-
-	public int GetID()
-	{
-		return ID;
 	}
 
 	public int GetOwnerID()

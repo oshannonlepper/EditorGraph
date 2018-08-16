@@ -9,7 +9,8 @@ public class GraphEditorWindow : EditorWindow {
 	private Dictionary<EditorPin, EditorNode> PinOwnerDictionary;
 	private Dictionary<System.Type, List<string>> RegisteredFunctionDictionary;
 	private Dictionary<System.Type, bool> ShowFunctions;
-	private List<EditorNode> NodeList;
+	private List<EditorNode> NodeList = new List<EditorNode>();
+	private List<EditorLink> LinkList = new List<EditorLink>();
 	private EditorGraph GraphToEdit;
 	private int controlId = -1;
 	private Material mat;
@@ -76,7 +77,9 @@ public class GraphEditorWindow : EditorWindow {
 					{
 						if (GUILayout.Button(MethodName))
 						{
-							GraphToEdit.AddNode(EditorNode.CreateFromFunction(LibraryType, MethodName));
+							int NodeID = GraphToEdit.AddNode(EditorNode.CreateFromFunction(LibraryType, MethodName));
+							EditorNode Node = GraphToEdit.GetNodeFromID(NodeID);
+							Node.SetNodePosition(new Vector2(Random.Range(0, 200), Random.Range(0, 200)));
 						}
 					}
 				}
@@ -206,9 +209,9 @@ public class GraphEditorWindow : EditorWindow {
 				RenderNode(_Node);
 			}
 
-			foreach (var PinPair in LinkDictionary)
+			foreach (var _Link in LinkList)
 			{
-				RenderLink(PinPair.Key, PinPair.Value);
+				RenderLink(_Link);
 			}
 
 			foreach (EditorNode _Node in NodeList)
@@ -225,121 +228,61 @@ public class GraphEditorWindow : EditorWindow {
 
 	private void UpdateGraphCache()
 	{
-		PinOwnerDictionary = new Dictionary<EditorPin, EditorNode>();
 		NodeList = GraphToEdit.GetNodeList();
-		foreach (EditorNode _Node in NodeList)
-		{
-			EditorPin InFlowPin = _Node.GetInputFlow();
-			EditorPin OutFlowPin = _Node.GetOutputFlow();
-			if (InFlowPin != null)
-			{
-				PinOwnerDictionary.Add(InFlowPin, _Node);
-			}
-			if (OutFlowPin != null)
-			{
-				PinOwnerDictionary.Add(OutFlowPin, _Node);
-			}
-
-			int NumInputs = _Node.GetNumInputs();
-			int NumOutputs = _Node.GetNumOutputs();
-
-			for (int Input = 0; Input < NumInputs; ++Input)
-			{
-				EditorPin InputPin = _Node.GetInput(Input);
-				PinOwnerDictionary.Add(InputPin, _Node);
-			}
-
-			for (int Output = 0; Output < NumOutputs; ++Output)
-			{
-				EditorPin OutputPin = _Node.GetOutput(Output);
-				PinOwnerDictionary.Add(OutputPin, _Node);
-			}
-		}
-
-		LinkDictionary = new Dictionary<EditorPin, EditorPin>();
-		List<EditorLink> LinkList = GraphToEdit.GetLinkList();
-		foreach (EditorLink _Link in LinkList)
-		{
-			LinkDictionary.Add(_Link.FromPin, _Link.ToPin);
-		}
 	}
 
 	private void RenderNode(EditorNode _Node)
 	{
 		Rect NodeRect = _Node.GetNodeRect();
+		Debug.Log("NodeRect = " + NodeRect);
 		DrawRect(NodeRect.min, NodeRect.max, Color.gray);
 	}
 
 	private void RenderNodePins(EditorNode _Node)
 	{
-		int NumInputs = _Node.GetNumInputs();
-		int NumOutputs = _Node.GetNumOutputs();
-		RenderPin(_Node.GetInputFlow(), true, -1, Color.white);
-		RenderPin(_Node.GetOutputFlow(), false, -1, Color.white);
-
-		for (int Input = 0; Input < NumInputs; ++Input)
+		int NumPins = _Node.PinCount;
+		for (int PinIndex = 0; PinIndex < NumPins; ++PinIndex)
 		{
-			RenderPin(_Node.GetInput(Input), true, Input, Color.cyan);
-		}
-		for (int Output = 0; Output < NumOutputs; ++Output)
-		{
-			RenderPin(_Node.GetOutput(Output), false, Output, Color.red);
+			Rect PinRect = _Node.GetPinRect(PinIndex);
+			DrawRect(PinRect.min, PinRect.max, Color.green);
 		}
 	}
 
 	private void RenderNodeText(EditorNode _Node)
 	{
-		int NumInputs = _Node.GetNumInputs();
-		int NumOutputs = _Node.GetNumOutputs();
 		Rect NodeRect = _Node.GetNodeRect();
+		NodeRect.height = 16.0f;
+		EditorGUI.LabelField(NodeRect, _Node.Name);
 
-		EditorGUI.LabelField(new Rect(NodeRect.min.x + NodeRect.width * 0.5f, NodeRect.min.y - 20.0f, NodeRect.height, 20.0f), _Node.Name);
-
-		for (int Input = 0; Input < NumInputs; ++Input)
+		int NumPins = _Node.PinCount;
+		for (int PinIndex = 0; PinIndex < NumPins;  ++PinIndex)
 		{
-			RenderPinText(_Node.GetInput(Input), true, Input, Color.cyan);
-		}
-		for (int Output = 0; Output < NumOutputs; ++Output)
-		{
-			RenderPinText(_Node.GetOutput(Output), false, Output, Color.red);
+			EditorGUI.LabelField(_Node.GetPinTextRect(PinIndex), _Node.GetPinName(PinIndex));
 		}
 	}
 
-	private void RenderPin(EditorPin _Pin, bool bIsInput, int Number, Color InColor)
+	private void RenderLink(EditorLink _Link)
 	{
-		if (_Pin == null)
+		EditorNode FromNode = null;
+		EditorNode ToNode = null;
+
+		int NumNodes = NodeList.Count;
+		for (int NodeIndex = 0; NodeIndex < NumNodes; ++NodeIndex)
 		{
-			return;
+			if (NodeList[NodeIndex].ID == _Link.NodeID_From)
+			{
+				FromNode = NodeList[NodeIndex];
+				continue;
+			}
+			if (NodeList[NodeIndex].ID == _Link.NodeID_To)
+			{
+				ToNode = NodeList[NodeIndex];
+				continue;
+			}
 		}
 
-		Vector2 PinTopLeft = GetPinPosition(_Pin, bIsInput, Number);
-		Vector2 PinBottomRight = PinTopLeft + Vector2.one * 10.0f;
-
-		DrawRect(PinTopLeft, PinBottomRight, InColor);
-	}
-
-	private void RenderPinText(EditorPin _Pin, bool bIsInput, int Number, Color InColor)
-	{
-		if (_Pin == null)
-		{
-			return;
-		}
-
-		Vector2 PinTopLeft = GetPinPosition(_Pin, bIsInput, Number) + Vector2.right * 20.0f;
-		Vector2 PinBottomRight = PinTopLeft + Vector2.one * 10.0f;
-
-		GUIStyle style = new GUIStyle();
-		style.normal.textColor = InColor;
-		EditorGUI.LabelField(new Rect(PinTopLeft.x, PinTopLeft.y, 80.0f, 20.0f), _Pin.GetPinName(), style);
-	}
-
-	private void RenderLink(EditorPin FromPin, EditorPin ToPin)
-	{
-		PinData LHSData = GetOwner(FromPin).GetPinData(FromPin);
-		PinData RHSData = GetOwner(ToPin).GetPinData(ToPin);
-
-		Vector2 From = GetPinPosition(FromPin, LHSData.bIsInput, LHSData.Number);
-		Vector2 To = GetPinPosition(ToPin, RHSData.bIsInput, RHSData.Number);
+		Vector2 From = FromNode.GetPinRect(_Link.PinID_From).position;
+		Vector2 To = ToNode.GetPinRect(_Link.PinID_To).position;
 		
 		GL.Color(Color.green);
 		GL.Begin(GL.LINES);

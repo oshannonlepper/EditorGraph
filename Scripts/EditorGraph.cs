@@ -1,5 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 [System.Serializable]
@@ -11,7 +11,7 @@ public class EditorGraph : ScriptableObject {
 	[SerializeField] private List<EditorNode> Nodes;
 	[SerializeField] private List<EditorLink> Links;
 
-	public void AddNode(EditorNode _Node)
+	public int AddNode(EditorNode _Node)
 	{
 		if (Nodes == null)
 		{
@@ -20,27 +20,57 @@ public class EditorGraph : ScriptableObject {
 		Nodes.Add(_Node);
 		_Node.OnNodeChanged += NotifyGraphChange;
 		NotifyGraphChange();
+		return _Node.ID;
 	}
 
-	public void RemoveNode(EditorNode _Node)
+	public bool RemoveNode(EditorNode _Node)
 	{
 		if (Nodes == null)
 		{
 			Nodes = new List<EditorNode>();
 		}
-		Nodes.Remove(_Node);
-		_Node.OnNodeChanged -= NotifyGraphChange;
-		NotifyGraphChange();
+
+		bool bSuccess = Nodes.Remove(_Node);
+
+		if (bSuccess)
+		{
+			_Node.OnNodeChanged -= NotifyGraphChange;
+			NotifyGraphChange();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
-	public void LinkPins(EditorPin LHS, EditorPin RHS)
+	public EditorNode GetNodeFromID(int ID)
+	{
+		foreach (EditorNode _Node in Nodes)
+		{
+			if (_Node.ID == ID)
+			{
+				return _Node;
+			}
+		}
+
+		Debug.LogError("Trying to get Node with invalid ID " + ID + ".");
+		return null;
+	}
+
+	public EditorNode CreateFromFunction(System.Type ClassType, string Methodname, bool bHasOutput = true, bool bHasInput = true)
+	{
+		return EditorNode.CreateFromFunction(ClassType, Methodname, bHasInput, bHasOutput);
+	}
+
+	private void LinkPins(int LHS_NodeID, int LHS_PinID, int RHS_NodeID, int RHS_PinID)
 	{
 		if (Links == null)
 		{
 			Links = new List<EditorLink>();
 		}
-		Links.Add(new EditorLink(LHS, RHS));
-		NotifyGraphChange();
+
+		Links.Add(new EditorLink(LHS_NodeID, LHS_PinID, RHS_NodeID, RHS_PinID));
 	}
 
 	public List<EditorNode> GetNodeList()
