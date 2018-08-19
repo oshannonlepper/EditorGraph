@@ -15,6 +15,12 @@ public struct EditorNodeRenderData
 
 public struct EditorPinIdentifier
 {
+	public EditorPinIdentifier(int _NodeID, int _PinID)
+	{
+		NodeID = _NodeID;
+		PinID = _PinID;
+	}
+
 	public int NodeID;
 	public int PinID;
 }

@@ -73,14 +73,14 @@ public class EditorGraph : ScriptableObject {
 		return EditorNode.CreateFromFunction(ClassType, Methodname, bHasInput, bHasOutput);
 	}
 
-	private void LinkPins(int LHS_NodeID, int LHS_PinID, int RHS_NodeID, int RHS_PinID)
+	public void LinkPins(EditorPinIdentifier LHSPin, EditorPinIdentifier RHSPin)
 	{
 		if (Links == null)
 		{
 			Links = new List<EditorLink>();
 		}
 
-		Links.Add(new EditorLink(LHS_NodeID, LHS_PinID, RHS_NodeID, RHS_PinID));
+		Links.Add(new EditorLink(LHSPin, RHSPin));
 	}
 
 	public List<EditorNode> GetNodeList()

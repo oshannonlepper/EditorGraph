@@ -10,12 +10,12 @@ public class EditorLink
 	[SerializeField] private int ToNodeID;
 	[SerializeField] private int ToPinID;
 
-	public EditorLink(int _FromNodeID, int _FromPinID, int _ToNodeID, int _ToPinID)
+	public EditorLink(EditorPinIdentifier LHSPin, EditorPinIdentifier RHSPin)
 	{
-		FromNodeID = _FromNodeID;
-		FromPinID = _FromPinID;
-		ToNodeID = _ToNodeID;
-		ToPinID = _ToPinID;
+		FromNodeID = LHSPin.NodeID;
+		FromPinID = LHSPin.PinID;
+		ToNodeID = RHSPin.NodeID;
+		ToPinID = RHSPin.PinID;
 	}
 
 	public int NodeID_From
