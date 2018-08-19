@@ -208,14 +208,14 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 				RenderNode(_Node);
 			}
 
-			foreach (var _Link in LinkList)
-			{
-				RenderLink(_Link);
-			}
-
 			foreach (EditorNode _Node in NodeList)
 			{
 				RenderNodePins(_Node);
+			}
+
+			foreach (var _Link in LinkList)
+			{
+				RenderLink(_Link);
 			}
 
 			foreach (EditorNode _Node in NodeList)
@@ -298,7 +298,7 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		Vector2 From = FromNode.GetPinRect(_Link.PinID_From).center;
 		Vector2 To = ToNode.GetPinRect(_Link.PinID_To).center;
 
-		Line(From, To, Color.green);
+		Line(From, To, Color.black);
 	}
 
 	private void DrawRect(Vector2 TopLeft, Vector2 BottomRight, Color Fill)
