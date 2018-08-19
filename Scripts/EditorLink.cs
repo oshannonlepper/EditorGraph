@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class EditorLink
 {
 
@@ -38,7 +39,7 @@ public class EditorLink
 	{
 		get
 		{
-			return ToPinID;
+			return FromPinID;
 		}
 	}
 
@@ -50,5 +51,9 @@ public class EditorLink
 		}
 	}
 
+	public override string ToString()
+	{
+		return NodeID_From + "." + PinID_From + " to " + NodeID_To + "." + PinID_To;
+	}
 
 }

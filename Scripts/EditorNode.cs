@@ -23,6 +23,12 @@ public struct EditorPinIdentifier
 
 	public int NodeID;
 	public int PinID;
+
+	public override string ToString()
+	{
+		return NodeID + "." + PinID;
+	}
+
 }
 
 [System.Serializable]

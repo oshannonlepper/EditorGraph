@@ -5,7 +5,6 @@ using UnityEditor;
 
 public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputHandler {
 
-	private Dictionary<EditorPin, EditorPin> LinkDictionary;
 	private Dictionary<System.Type, List<string>> RegisteredFunctionDictionary;
 	private Dictionary<System.Type, bool> ShowFunctions;
 	private List<EditorNode> NodeList = new List<EditorNode>();
@@ -235,6 +234,7 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 	private void UpdateGraphCache()
 	{
 		NodeList = GraphToEdit.GetNodeList();
+		LinkList = GraphToEdit.GetLinkList();
 	}
 
 	private void RenderNode(EditorNode _Node)
@@ -279,6 +279,10 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		int NumNodes = NodeList.Count;
 		for (int NodeIndex = 0; NodeIndex < NumNodes; ++NodeIndex)
 		{
+			if (FromNode != null && ToNode != null)
+			{
+				break;
+			}
 			if (NodeList[NodeIndex].ID == _Link.NodeID_From)
 			{
 				FromNode = NodeList[NodeIndex];
@@ -291,8 +295,8 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 			}
 		}
 
-		Vector2 From = FromNode.GetPinRect(_Link.PinID_From).position;
-		Vector2 To = ToNode.GetPinRect(_Link.PinID_To).position;
+		Vector2 From = FromNode.GetPinRect(_Link.PinID_From).center;
+		Vector2 To = ToNode.GetPinRect(_Link.PinID_To).center;
 
 		Line(From, To, Color.green);
 	}
@@ -348,7 +352,8 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 					Rect PinRect = _Node.GetPinRect(PinIndex);
 					if (HitTestPointToRect(mousePos, PinRect))
 					{
-						LinkPins(_Node.GetPinIdentifier(SelectedPin.PinID), _Node.GetPinIdentifier(PinIndex));
+						EditorNode OtherNode = GraphToEdit.GetNodeFromID(SelectedPin.NodeID);
+						LinkPins(OtherNode.GetPinIdentifier(SelectedPin.PinID), _Node.GetPinIdentifier(PinIndex));
 						break;
 					}
 				}

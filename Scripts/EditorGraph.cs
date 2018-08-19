@@ -80,7 +80,10 @@ public class EditorGraph : ScriptableObject {
 			Links = new List<EditorLink>();
 		}
 
-		Links.Add(new EditorLink(LHSPin, RHSPin));
+		EditorLink NewLink = new EditorLink(LHSPin, RHSPin);
+		Links.Add(NewLink);
+		Debug.Log("New link created: " + NewLink);
+		Debug.Log("From : " + LHSPin + " to " + RHSPin);
 	}
 
 	public List<EditorNode> GetNodeList()
