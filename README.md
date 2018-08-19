@@ -11,7 +11,7 @@ Experimenting with extending Unity's editor functionality and C# reflection to c
 
 ### Creating a Graph ###
 
-Currently, you can't do a lot with this yet. You can create a graph containing nodes that can't be linked together.
+Currently, you can't do a lot with this yet. You can create a graph containing nodes and link them together with no validation.
 
 * Pressing the 'New Graph' button will attempt to save an asset to your 'Assets/Graphs' folder, so make sure that exists.
 
