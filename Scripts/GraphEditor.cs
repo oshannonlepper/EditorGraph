@@ -43,8 +43,9 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 	private void Line(Vector2 From, Vector2 To, Color InColor)
 	{
 		Handles.BeginGUI();
-		Handles.color = InColor;
-		Handles.DrawLine(From, To);
+		Vector3 FromTangent = new Vector3(0.5f * (From.x + To.x), From.y);
+		Vector3 ToTangent = new Vector3(0.5f * (From.x + To.x), To.y);
+		Handles.DrawBezier(From, To, FromTangent, ToTangent, InColor, null, 5.0f);
 		Handles.EndGUI();
 		Repaint();
 	}
