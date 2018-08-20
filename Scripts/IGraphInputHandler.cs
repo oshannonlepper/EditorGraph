@@ -11,6 +11,6 @@ public interface IGraphInputHandler
 	void MoveNode(EditorNode node, Vector2 newPosition);
 	void SelectPin(EditorPinIdentifier pinID);
 	void Deselect();
-	void LinkPins(EditorPinIdentifier pinA, EditorPinIdentifier pinB);
+	bool LinkPins(EditorPinIdentifier pinA, EditorPinIdentifier pinB);
 
 }

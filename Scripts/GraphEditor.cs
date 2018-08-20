@@ -402,9 +402,18 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		Repaint();
 	}
 
-	public void LinkPins(EditorPinIdentifier pinA, EditorPinIdentifier pinB)
+	public bool LinkPins(EditorPinIdentifier pinA, EditorPinIdentifier pinB)
 	{
+		EditorPin pinAData = GraphToEdit.GetPinFromID(pinA);
+		EditorPin pinBData = GraphToEdit.GetPinFromID(pinB);
+
+		if (!pinBData.CanLinkTo(pinAData))
+		{
+			return false;
+		}
+
 		GraphToEdit.LinkPins(pinA, pinB);
+		return true;
 	}
 
 	public void Deselect()
