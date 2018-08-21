@@ -133,7 +133,7 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 				{
 					if (GUILayout.Button(MethodName))
 					{
-						int NodeID = GraphToEdit.AddNode(EditorNode.CreateFromFunction(LibraryType, MethodName));
+						int NodeID = GraphToEdit.AddNode(EditorNode.CreateFromFunction(LibraryType, MethodName, false, false));
 						EditorNode Node = GraphToEdit.GetNodeFromID(NodeID);
 						Node.SetNodePosition(new Vector2(Random.Range(0, 200), Random.Range(0, 200)));
 					}
@@ -246,7 +246,7 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		{
 			DrawRect(NodeRect.min - Vector2.one * selectionBorder, NodeRect.max + Vector2.one * selectionBorder, Color.yellow);
 		}
-		DrawRect(NodeRect.min, NodeRect.max, Color.gray);
+		GUI.Box(NodeRect, " ");
 	}
 
 	private void RenderNodePins(EditorNode _Node)
@@ -255,7 +255,7 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		for (int PinIndex = 0; PinIndex < NumPins; ++PinIndex)
 		{
 			Rect PinRect = _Node.GetPinRect(PinIndex);
-			DrawRect(PinRect.min, PinRect.max, Color.green);
+			GUI.Button(PinRect, " ");
 		}
 	}
 

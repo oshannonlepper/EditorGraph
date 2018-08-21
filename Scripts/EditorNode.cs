@@ -184,11 +184,11 @@ public class EditorNode
 	{
 		_renderData.NodeRect.position = Position;
 		_renderData.NodeRect.width = 100.0f;
-		_renderData.NodeRect.height = 40.0f + (30.0f * Mathf.Max(GetNumPins(EPinLinkType.Input), GetNumPins(EPinLinkType.Output)));
+		_renderData.NodeRect.height = 16.0f + (30.0f * Mathf.Max(GetNumPins(EPinLinkType.Input), GetNumPins(EPinLinkType.Output)));
 		_renderData.PinSize = 10.0f;
 		_renderData.InputPinHorizontalOffset = _renderData.PinSize;
 		_renderData.OutputPinHorizontalOffset = _renderData.NodeRect.width - _renderData.PinSize;
-		_renderData.PinVerticalOffset = 40.0f;
+		_renderData.PinVerticalOffset = 16.0f;
 		_renderData.PinVerticalSpacing = 10.0f;
 	}
 

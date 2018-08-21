@@ -68,7 +68,7 @@ public class EditorGraph : ScriptableObject {
 		return null;
 	}
 
-	public EditorNode CreateFromFunction(System.Type ClassType, string Methodname, bool bHasOutput = true, bool bHasInput = true)
+	public EditorNode CreateFromFunction(System.Type ClassType, string Methodname, bool bHasOutput = false, bool bHasInput = false)
 	{
 		return EditorNode.CreateFromFunction(ClassType, Methodname, bHasInput, bHasOutput);
 	}
