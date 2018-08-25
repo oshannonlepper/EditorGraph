@@ -1,4 +1,7 @@
 # EditorGraph #
+
+![EditorGraph Screenshot](https://raw.githubusercontent.com/oshannonlepper/EditorGraph/master/READMEContent/GraphEditor.png)
+
 Experimenting with extending Unity's editor functionality and C# reflection to create a graph editor.
 
 ## Setup ##
