@@ -52,7 +52,10 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 
 	private void OnGUI()
 	{
-		OnGUI_Buttons();
+		DrawGrid(20, 0.2f, Color.gray);
+		DrawGrid(100, 0.4f, Color.gray);
+
+		ProcessEvents(Event.current);
 
 		if (GraphToEdit == null)
 		{
@@ -60,18 +63,16 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 			return;
 		}
 
-		Update();
-
 		if (GraphToEdit != null)
 		{
 			if (RegisteredFunctionDictionary == null)
 			{
 				Reset();
 			}
-			OnGUI_FunctionList();
 		}
-
+		
 		RenderGraph();
+		// draw editors for selected node
 
 		if (GraphToEdit != null && SelectedPin.PinID != -1)
 		{
@@ -80,68 +81,122 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 			Line(PinPos, Event.current.mousePosition, Color.magenta);
 		}
 
+		if (GUI.changed)
+		{
+			Repaint();
+		}
+
 	}
 
-	private void OnGUI_Buttons()
+	private void OnClick_NewGraph()
 	{
-		GUILayout.BeginHorizontal();
-
-		if (GUILayout.Button("New Graph"))
+		EditorGraph NewGraph = ScriptableObject.CreateInstance<EditorGraph>();
+		string AssetDirectory = "Assets/";
+		if (AssetDatabase.IsValidFolder("Assets/Graphs"))
 		{
-			EditorGraph NewGraph = ScriptableObject.CreateInstance<EditorGraph>();
-			AssetDatabase.CreateAsset(NewGraph, "Assets/Graphs/NewGraph.asset");
-			AssetDatabase.SaveAssets();
-			OnGraphLoaded(NewGraph);
+			AssetDirectory = "Assets/Graphs/";
+		}
+		string AssetName = "NewGraph";
+		int ID = 1;
+		while (AssetDatabase.FindAssets(AssetName).Length > 0)
+		{
+			AssetName = "NewGraph_" + ID;
+			++ID;
+		}
+		AssetDatabase.CreateAsset(NewGraph, AssetDirectory + AssetName + ".asset");
+		AssetDatabase.SaveAssets();
+		OnGraphLoaded(NewGraph);
+	}
+
+	private void OnClick_LoadGraph()
+	{
+		controlId = GUIUtility.GetControlID(FocusType.Passive);
+		EditorGUIUtility.ShowObjectPicker<EditorGraph>(null, false, "", controlId);
+	}
+
+	private void AddFunctionListToContextMenu(GenericMenu menu, Vector2 mousePos)
+	{
+		if (GraphToEdit == null)
+		{
+			menu.AddDisabledItem(new GUIContent("No graph available"));
+			return;
 		}
 
-		if (GUILayout.Button("Load Graph"))
+		foreach (System.Type LibraryType in RegisteredFunctionDictionary.Keys)
 		{
-			controlId = GUIUtility.GetControlID(FocusType.Passive);
-			EditorGUIUtility.ShowObjectPicker<EditorGraph>(null, false, "", controlId);
+			string libraryName = LibraryType.ToString();
+			foreach (string MethodName in RegisteredFunctionDictionary[LibraryType])
+			{
+				menu.AddItem(new GUIContent(libraryName + "/" + MethodName), false, () => OnClick_AddNode(LibraryType, MethodName, mousePos));
+			}
+		}
+	}
+
+	private void OnClick_AddNode(System.Type LibraryType, string MethodName, Vector2 mousePos)
+	{
+		int NodeID = GraphToEdit.AddNode(EditorNode.CreateFromFunction(LibraryType, MethodName, false, false));
+		EditorNode Node = GraphToEdit.GetNodeFromID(NodeID);
+		Node.SetNodePosition(mousePos);
+	}
+
+	private void ProcessEvents(Event e)
+	{
+		switch (e.type)
+		{
+			case EventType.MouseDown:
+			{
+				OnMouseDown(e.button, e.mousePosition);
+				break;
+			}
+			case EventType.MouseUp:
+			{
+				OnMouseUp(e.button, e.mousePosition);
+				break;
+			}
+			case EventType.MouseMove:
+			{
+				OnMouseMove(e.mousePosition);
+				break;
+			}
+			case EventType.MouseDrag:
+			{
+				OnMouseMove(e.mousePosition);
+				break;
+			}
+			case EventType.KeyUp:
+			{
+				if (e.keyCode == KeyCode.Delete)
+				{
+					if (SelectedNode != null && SelectedPin.PinID == -1)
+					{
+						int NodeID = SelectedNode.ID;
+						GraphToEdit.RemoveNode(SelectedNode);
+						Deselect();
+						foreach (EditorLink Link in LinkList)
+						{
+							
+						}
+					}
+				}
+				break;
+			}
 		}
 
-		if (Event.current.commandName.Equals("ObjectSelectorClosed"))
+		if (e.commandName.Equals("ObjectSelectorClosed"))
 		{
 			OnGraphLoaded(EditorGUIUtility.GetObjectPickerObject() as EditorGraph);
 			controlId = -1;
 		}
-
-		GUILayout.EndHorizontal();
 	}
 
-	private void OnGUI_FunctionList()
+	private void ProcessContextMenu(Vector2 mousePosition)
 	{
-		GUILayout.BeginVertical(GUILayout.Width(100.0f));
-
-		foreach (System.Type LibraryType in RegisteredFunctionDictionary.Keys)
-		{
-			if (GUILayout.Button(LibraryType.ToString()))
-			{
-				if (!ShowFunctions.ContainsKey(LibraryType))
-				{
-					ShowFunctions[LibraryType] = true;
-				}
-				else
-				{
-					ShowFunctions[LibraryType] = !ShowFunctions[LibraryType];
-				}
-			}
-
-			if (ShowFunctions.ContainsKey(LibraryType) && ShowFunctions[LibraryType])
-			{
-				foreach (string MethodName in RegisteredFunctionDictionary[LibraryType])
-				{
-					if (GUILayout.Button(MethodName))
-					{
-						int NodeID = GraphToEdit.AddNode(EditorNode.CreateFromFunction(LibraryType, MethodName, false, false));
-						EditorNode Node = GraphToEdit.GetNodeFromID(NodeID);
-						Node.SetNodePosition(new Vector2(Random.Range(0, 200), Random.Range(0, 200)));
-					}
-				}
-			}
-		}
-
-		GUILayout.EndVertical();
+		GenericMenu genericMenu = new GenericMenu();
+		genericMenu.AddItem(new GUIContent("New Graph"), false, () => OnClick_NewGraph());
+		genericMenu.AddItem(new GUIContent("Load Graph"), false, () => OnClick_LoadGraph());
+		genericMenu.AddSeparator("");
+		AddFunctionListToContextMenu(genericMenu, mousePosition);
+		genericMenu.ShowAsContext();
 	}
 
 	private void UpdateFunctionMap()
@@ -173,12 +228,12 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		{
 			if (OldGraph != null && OldGraph != GraphToEdit)
 			{
-				OldGraph.OnGraphChanged -= RenderGraph;
+				OldGraph.OnGraphChanged -= OnGraphChanged;
 			}
 
 			UpdateGraphCache();
 
-			GraphToEdit.OnGraphChanged += RenderGraph;
+			GraphToEdit.OnGraphChanged += OnGraphChanged;
 		}
 	}
 
@@ -187,8 +242,6 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		UpdateGraphCache();
 
 		SaveGraph();
-
-		RenderGraph();
 	}
 
 	private void SaveGraph()
@@ -234,8 +287,12 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 
 	private void UpdateGraphCache()
 	{
-		NodeList = GraphToEdit.GetNodeList();
-		LinkList = GraphToEdit.GetLinkList();
+		if (GraphToEdit != null)
+		{
+			NodeList = GraphToEdit.GetNodeList();
+			LinkList = GraphToEdit.GetLinkList();
+			Repaint();
+		}
 	}
 
 	private void RenderNode(EditorNode _Node)
@@ -322,22 +379,24 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 					{
 						SelectPin(_Node.GetPinIdentifier(PinIndex));
 						bPinSelected = true;
-						break;
+						return;
 					}
-				}
-
-				if (bPinSelected)
-				{
-					break;
 				}
 
 				Rect NodeRect = _Node.GetNodeRect();
 				if (HitTestPointToRect(mousePos, NodeRect))
 				{
+					Deselect();
 					SelectNode(_Node.ID);
-					break;
+					return;
 				}
 			}
+
+			Deselect();
+		}
+		else if (button == 1)
+		{
+			ProcessContextMenu(mousePos);
 		}
 	}
 
@@ -347,46 +406,35 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		{
 			foreach (EditorNode _Node in NodeList)
 			{
-				int NumPins = _Node.PinCount;
-				for (int PinIndex = 0; PinIndex < NumPins; ++PinIndex)
+				Rect NodeRect = _Node.GetNodeRect();
+				if (HitTestPointToRect(mousePos, NodeRect))
 				{
-					Rect PinRect = _Node.GetPinRect(PinIndex);
-					if (HitTestPointToRect(mousePos, PinRect))
+					int NumPins = _Node.PinCount;
+					for (int PinIndex = 0; PinIndex < NumPins; ++PinIndex)
 					{
-						EditorNode OtherNode = GraphToEdit.GetNodeFromID(SelectedPin.NodeID);
-						LinkPins(OtherNode.GetPinIdentifier(SelectedPin.PinID), _Node.GetPinIdentifier(PinIndex));
-						break;
+						Rect PinRect = _Node.GetPinRect(PinIndex);
+						if (HitTestPointToRect(mousePos, PinRect))
+						{
+							EditorNode OtherNode = GraphToEdit.GetNodeFromID(SelectedPin.NodeID);
+							LinkPins(OtherNode.GetPinIdentifier(SelectedPin.PinID), _Node.GetPinIdentifier(PinIndex));
+							UpdateGraphCache();
+							break;
+						}
 					}
 				}
 			}
-			Deselect();
+			if (SelectedPin.PinID != -1)
+			{
+				Deselect();
+			}
 		}
 	}
 
 	public void OnMouseMove(Vector2 mousePosition)
 	{
-		if (SelectedNode != null)
+		if (SelectedNode != null && SelectedPin.PinID == -1)
 		{
 			MoveNode(SelectedNode, mousePosition);
-		}
-	}
-
-	public void Update()
-	{
-		if (Event.current != null)
-		{
-			if (Event.current.type == EventType.MouseDrag || Event.current.type == EventType.MouseMove)
-			{
-				OnMouseMove(Event.current.mousePosition);
-			}
-			else if (Event.current.type == EventType.MouseDown)
-			{
-				OnMouseDown(Event.current.button, Event.current.mousePosition);
-			}
-			else if (Event.current.type == EventType.MouseUp)
-			{
-				OnMouseUp(Event.current.button, Event.current.mousePosition);
-			}
 		}
 	}
 
@@ -410,6 +458,7 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 
 		if (!pinBData.CanLinkTo(pinAData))
 		{
+			Debug.LogWarning("Failed to link pins");
 			return false;
 		}
 
@@ -422,9 +471,6 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		SelectedNode = null;
 		SelectedPin.NodeID = -1;
 		SelectedPin.PinID = -1;
-		Repaint();
-		EditorUtility.SetDirty(GraphToEdit);
-		SaveGraph();
 	}
 
 	public void MoveNode(EditorNode node, Vector2 newPosition)
@@ -434,5 +480,36 @@ public class GraphEditorWindow : EditorWindow, IGraphInputListener, IGraphInputH
 		node.SetNodePosition(position + delta);
 		oldDragPosition = newPosition;
 		Repaint();
+	}
+
+	private Vector2 drag = new Vector2();
+
+	private void DrawGrid(float cellSize, float opacity, Color colour)
+	{
+		int widthDivs = Mathf.CeilToInt(position.width / cellSize);
+		int heightDivs = Mathf.CeilToInt(position.height / cellSize);
+
+		Handles.BeginGUI();
+		Handles.color = new Color(colour.r, colour.g, colour.b, opacity);
+
+		Vector3 newOffset = new Vector3();
+		if (GraphToEdit != null)
+		{
+			GraphToEdit.EditorViewportOffset += drag * 0.5f;
+			newOffset = new Vector3(GraphToEdit.EditorViewportOffset.x % cellSize, GraphToEdit.EditorViewportOffset.y % cellSize, 0);
+		}
+
+		for (int i = 0; i < widthDivs; ++i)
+		{
+			Handles.DrawLine(new Vector3(cellSize * i, -cellSize, 0) + newOffset, new Vector3(cellSize * i, position.height, 0) + newOffset);
+		}
+
+		for (int j = 0; j < heightDivs; ++j)
+		{
+			Handles.DrawLine(new Vector3(-cellSize, cellSize * j, 0) + newOffset, new Vector3(position.width, cellSize * j, 0) + newOffset);
+		}
+
+		Handles.color = Color.white;
+		Handles.EndGUI();
 	}
 }

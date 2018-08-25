@@ -88,6 +88,11 @@ public class EditorNode
 
 	public EditorNode()
 	{
+		Init();
+	}
+
+	private void Init()
+	{
 		_ID = ++_nodeIDCounter;
 		Pins = new List<EditorPin>();
 		UpdateNodeRect();
@@ -182,20 +187,43 @@ public class EditorNode
 
 	public void UpdateNodeRect()
 	{
-		_renderData.NodeRect.position = Position;
-		_renderData.NodeRect.width = 100.0f;
-		_renderData.NodeRect.height = 16.0f + (30.0f * Mathf.Max(GetNumPins(EPinLinkType.Input), GetNumPins(EPinLinkType.Output)));
 		_renderData.PinSize = 10.0f;
+		_renderData.NodeRect.position = Position;
+		_renderData.NodeRect.width = 60.0f + GetLongestPinNameWidth(EPinLinkType.Input) + GetLongestPinNameWidth(EPinLinkType.Output);
+		_renderData.NodeRect.height = 16.0f + (_renderData.PinVerticalOffset + ((_renderData.PinSize + _renderData.PinVerticalSpacing) * Mathf.Max(GetNumPins(EPinLinkType.Input), GetNumPins(EPinLinkType.Output))));
 		_renderData.InputPinHorizontalOffset = _renderData.PinSize;
 		_renderData.OutputPinHorizontalOffset = _renderData.NodeRect.width - _renderData.PinSize;
 		_renderData.PinVerticalOffset = 16.0f;
 		_renderData.PinVerticalSpacing = 10.0f;
 	}
 
+	private float GetLongestPinNameWidth(EPinLinkType LinkType)
+	{
+		float Width = 0.0f;
+		foreach (EditorPin Pin in Pins)
+		{
+			if (Pin.GetPinLinkType() == LinkType)
+			{
+				float CurrentPinWidth = EstimateStringWidth(Pin.GetPinName());
+				if (CurrentPinWidth > Width)
+				{
+					Width = CurrentPinWidth;
+				}
+			}
+		}
+		return Width;
+	}
+
+	private float EstimateStringWidth(string _String)
+	{
+		return _String.Length * 8.0f;
+	}
+
 	private int AddPin(EPinLinkType _LinkType, System.Type _Type, string _Name)
 	{
 		EditorPin NewPin = new EditorPin((_Type == null) ? "null" : _Type.ToString(), _Name, ID, _LinkType);
 		Pins.Add(NewPin);
+		UpdateNodeRect();
 		return Pins.Count-1;
 	}
 
@@ -234,7 +262,6 @@ public class EditorNode
 	public static EditorNode CreateFromFunction(System.Type ClassType, string Methodname, bool bHasOutput = true, bool bHasInput = true)
 	{
 		EditorNode _Node = new EditorNode();
-		_Node.Position = new Vector2(Random.Range(0.0f, 300.0f), Random.Range(50.0f, 450.0f));
 
 		if (ClassType != null)
 		{

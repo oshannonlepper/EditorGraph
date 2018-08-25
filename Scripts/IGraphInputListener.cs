@@ -9,6 +9,4 @@ public interface IGraphInputListener
 	void OnMouseUp(int button, Vector2 mousePos);
 	void OnMouseMove(Vector2 mousePos);
 
-	void Update();
-
 }

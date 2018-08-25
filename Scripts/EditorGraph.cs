@@ -10,6 +10,7 @@ public class EditorGraph : ScriptableObject {
 
 	[SerializeField] private List<EditorNode> Nodes;
 	[SerializeField] private List<EditorLink> Links;
+	[SerializeField] public Vector2 EditorViewportOffset = new Vector2();
 
 	public int AddNode(EditorNode _Node)
 	{
@@ -27,13 +28,24 @@ public class EditorGraph : ScriptableObject {
 	{
 		if (Nodes == null)
 		{
-			Nodes = new List<EditorNode>();
+			return false;
 		}
 
+		int NodeID = _Node.ID;
 		bool bSuccess = Nodes.Remove(_Node);
 
 		if (bSuccess)
 		{
+			// remove all associated links
+			for (int Index = Links.Count - 1; Index >= 0; --Index)
+			{
+				EditorLink Link = Links[Index];
+				if (Link.NodeID_From == NodeID || Link.NodeID_To == NodeID)
+				{
+					Links.RemoveAt(Index);
+				}
+			}
+
 			_Node.OnNodeChanged -= NotifyGraphChange;
 			NotifyGraphChange();
 			return true;
@@ -82,8 +94,7 @@ public class EditorGraph : ScriptableObject {
 
 		EditorLink NewLink = new EditorLink(LHSPin, RHSPin);
 		Links.Add(NewLink);
-		Debug.Log("New link created: " + NewLink);
-		Debug.Log("From : " + LHSPin + " to " + RHSPin);
+		NotifyGraphChange();
 	}
 
 	public List<EditorNode> GetNodeList()
