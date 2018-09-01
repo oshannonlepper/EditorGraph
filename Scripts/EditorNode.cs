@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using System.Reflection;
 
@@ -15,7 +16,7 @@ public struct EditorNodeRenderData
 
 public struct EditorPinIdentifier
 {
-	public EditorPinIdentifier(int _NodeID, int _PinID)
+	public EditorPinIdentifier(int _NodeID = -1, int _PinID = -1)
 	{
 		NodeID = _NodeID;
 		PinID = _PinID;
@@ -43,8 +44,6 @@ public class EditorNode
 	[SerializeField] private Vector2 _position;
 	[SerializeField] private int _ID;
 	private EditorNodeRenderData _renderData;
-	
-	private static int _nodeIDCounter = -1;
 
 	public string Name
 	{
@@ -88,12 +87,18 @@ public class EditorNode
 
 	public EditorNode()
 	{
+		Debug.LogError("EditorNode being constructed without its graph owner as a parameter, unable to generate a unique identifier. (ID = "+_ID+")");
+		Init();
+	}
+
+	public EditorNode(EditorGraph Owner)
+	{
+		_ID = Owner.GenerateUniqueNodeID();
 		Init();
 	}
 
 	private void Init()
 	{
-		_ID = ++_nodeIDCounter;
 		Pins = new List<EditorPin>();
 		UpdateNodeRect();
 	}
@@ -185,6 +190,11 @@ public class EditorNode
 		UpdateNodeRect();
 	}
 
+    public Vector2 GetNodePosition()
+    {
+        return Position;
+    }
+
 	public void UpdateNodeRect()
 	{
 		_renderData.PinSize = 10.0f;
@@ -195,6 +205,35 @@ public class EditorNode
 		_renderData.OutputPinHorizontalOffset = _renderData.NodeRect.width - _renderData.PinSize;
 		_renderData.PinVerticalOffset = 16.0f;
 		_renderData.PinVerticalSpacing = 10.0f;
+	}
+
+	public void RenderNode(EditorGraph Graph, bool bIsSelected)
+	{
+		const float selectionBorder = 5.0f;
+		if (bIsSelected)
+		{
+			EditorGraphDrawUtils.DrawRect(_renderData.NodeRect.min - Vector2.one * selectionBorder, _renderData.NodeRect.max + Vector2.one * selectionBorder, Color.yellow);
+		}
+		GUI.Box(_renderData.NodeRect, " ");
+
+		for (int PinIndex = 0; PinIndex < PinCount; ++PinIndex)
+		{
+			Pins[PinIndex].RenderPin(Graph, this);
+		}
+
+		RenderNodeText();
+	}
+
+	private void RenderNodeText()
+	{
+		Rect NodeRect = _renderData.NodeRect;
+		NodeRect.height = 16.0f;
+		EditorGUI.LabelField(NodeRect, Name);
+
+		for (int PinIndex = 0; PinIndex < PinCount; ++PinIndex)
+		{
+			EditorGUI.LabelField(GetPinTextRect(PinIndex), GetPinName(PinIndex));
+		}
 	}
 
 	private float GetLongestPinNameWidth(EPinLinkType LinkType)
@@ -221,10 +260,12 @@ public class EditorNode
 
 	private int AddPin(EPinLinkType _LinkType, System.Type _Type, string _Name)
 	{
-		EditorPin NewPin = new EditorPin((_Type == null) ? "null" : _Type.ToString(), _Name, ID, _LinkType);
+		int PinID = Pins.Count;
+		Debug.Log("Adding pin to node with ID " + ID + ", pinID = " + PinID);
+		EditorPin NewPin = new EditorPin((_Type == null) ? "null" : _Type.ToString(), _Name, ID, PinID, _LinkType);
 		Pins.Add(NewPin);
 		UpdateNodeRect();
-		return Pins.Count-1;
+		return PinID;
 	}
 
 	private void ClearPins()
@@ -259,9 +300,9 @@ public class EditorNode
 		}
 	}
 
-	public static EditorNode CreateFromFunction(System.Type ClassType, string Methodname, bool bHasOutput = true, bool bHasInput = true)
+	public static EditorNode CreateFromFunction(EditorGraph Owner, System.Type ClassType, string Methodname, bool bHasOutput = true, bool bHasInput = true)
 	{
-		EditorNode _Node = new EditorNode();
+		EditorNode _Node = new EditorNode(Owner);
 
 		if (ClassType != null)
 		{

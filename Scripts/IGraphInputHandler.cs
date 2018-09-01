@@ -6,11 +6,8 @@ public interface IGraphInputHandler
 {
 
 	void OnGraphLoaded(EditorGraph graph);
-
-	void SelectNode(int nodeID);
+	
 	void MoveNode(EditorNode node, Vector2 newPosition);
-	void SelectPin(EditorPinIdentifier pinID);
-	void Deselect();
 	bool LinkPins(EditorPinIdentifier pinA, EditorPinIdentifier pinB);
 
 }

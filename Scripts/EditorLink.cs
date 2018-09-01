@@ -56,4 +56,20 @@ public class EditorLink
 		return NodeID_From + "." + PinID_From + " to " + NodeID_To + "." + PinID_To;
 	}
 
+	public void RenderLink(EditorGraph Graph)
+	{
+		EditorNode FromNode = Graph.GetNodeFromID(NodeID_From);
+		EditorNode ToNode = Graph.GetNodeFromID(NodeID_To);
+
+		if (FromNode == null || ToNode == null)
+		{
+			return;
+		}
+
+		Rect FromRect = FromNode.GetPinRect(PinID_From);
+		Rect ToRect = ToNode.GetPinRect(PinID_To);
+	
+		EditorGraphDrawUtils.Line(FromRect.center, ToRect.center, Color.black);
+	}
+
 }
